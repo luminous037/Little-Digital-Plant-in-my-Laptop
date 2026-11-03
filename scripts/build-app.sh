@@ -27,8 +27,10 @@ mkdir -p "$APP/Contents/Resources/Sounds"
 cp Sources/LittlePlant/Resources/Sounds/*.wav "$APP/Contents/Resources/Sounds/"
 cp Sources/LittlePlant/Resources/Sounds/*.mp3 "$APP/Contents/Resources/Sounds/"
 cp Sources/LittlePlant/Resources/Sounds/*.m4a "$APP/Contents/Resources/Sounds/"
+# Remove stale tracks from earlier app bundles before copying the current library.
+rm -rf "$APP/Contents/Resources/Music"
 mkdir -p "$APP/Contents/Resources/Music"
-cp Sources/LittlePlant/Resources/Music/*.mp3 "$APP/Contents/Resources/Music/"
+cp Sources/LittlePlant/Resources/Music/*.(mp3|m4a)(N) "$APP/Contents/Resources/Music/"
 if [[ -f Sources/LittlePlant/Resources/AppIcon.icns ]]; then
     cp Sources/LittlePlant/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 fi
@@ -42,8 +44,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleDisplayName</key><string>Little Plant</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.1.0</string>
-<key>CFBundleVersion</key><string>1</string>
+<key>CFBundleShortVersionString</key><string>0.1.1</string>
+<key>CFBundleVersion</key><string>2</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>LSUIElement</key><true/>
 <key>NSLocationUsageDescription</key><string>현재 위치의 날씨를 식물의 방에 반영합니다. Your location is used to show local weather in your plant room.</string>

@@ -52,8 +52,8 @@ struct GardenView: View {
                     .help(store.pruningMode ? t("노랗거나 마른 잎을 눌러 잘라 주세요.", "Click a yellow or dried leaf to snip it.") : (store.wateringMode ? t("물뿌리개를 잡고 흙 위로 드래그하세요.", "Grab the can and drag its spray over the soil.") : t("식물·창문·책·CD를 눌러 보세요. 플레이어 줄을 클릭해 주세요.", "Click the plant, window, book or CD. Click the player cord.")))
                     .accessibilityLabel(t("식물과 창문, 책장", "Plant, window and bookshelf"))
                     .accessibilityAction(named:Text("my cozy room")) { openAlbum("cozy-room") }
-                    .accessibilityAction(named:Text("Dreamy Mode")) { openAlbum("dreamy-mode") }
-                    .accessibilityAction(named:Text("Tomato Farm")) { openAlbum("tomato-farm") }
+                    .accessibilityAction(named:Text("Moonlit Notes")) { openAlbum("dreamy-mode") }
+                    .accessibilityAction(named:Text("Apricot Afternoon")) { openAlbum("tomato-farm") }
                     .accessibilityAction(named:Text(t("플레이어 줄 클릭", "Click player cord"))) { music.pullCord() }
                     .accessibilityAction(named:Text(t("정지한 CD 꺼내기", "Return stopped CD"))) { music.eject() }
                     .accessibilityAction(named:Text(t("사진 앨범 열기", "Open photo album"))) { if photos.hasAlbum { openPhotoBook() } }

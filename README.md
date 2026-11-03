@@ -16,13 +16,15 @@ Requires **macOS 13 or later**.
 
 ### Download the app
 
-[**Download Little Plant.dmg for macOS ↓**](https://github.com/luminous037/Little-Digital-Plant-in-my-Laptop/releases/latest/download/Little-Plant.dmg)
+> **Audio update:** Do not redistribute the old v0.1.0 installer. Two third-party recordings have been replaced with newly synthesized tracks; use a rebuilt release containing Moonlit Notes and Apricot Afternoon.
 
-Click the download button above in your browser to download the installer directly—no source code or build tools are needed. This link always points to `Little-Plant.dmg` in the latest published release.
+[**Replacement installer release status →**](https://github.com/luminous037/Little-Digital-Plant-in-my-Laptop/releases)
 
-> **Release status:** The first public DMG release has not been published yet. The download button will work once `Little-Plant.dmg` is attached to a published GitHub Release. Until then, use [Build from source](#build-from-source) below.
+The old direct-download button is temporarily disabled because the v0.1.0 installer contains removed third-party recordings. Download a rebuilt v0.1.1 or later installer only after it has been published. No source code or build tools are needed for DMG installation.
 
-1. **Download:** click **Download Little Plant.dmg for macOS** above. If your browser asks, choose **Save File**. The file is normally saved in **Downloads**.
+> **Release status:** v0.1.0 must not be redistributed. A replacement DMG is being prepared. Publishing a new version does not remove the old release asset; the old DMG must be deleted separately.
+
+1. **Download:** open the release page above and choose **Little-Plant.dmg** from a replacement release (v0.1.1 or later). If your browser asks, choose **Save File**. The file is normally saved in **Downloads**.
 2. **Open:** open `Little-Plant.dmg` from your browser’s downloads list or from Finder → Downloads.
 3. **Install:** in the disk image window, drag **Little Plant.app** onto the **Applications** folder shortcut. Wait for copying to finish.
 4. **Eject:** eject **Little Plant** from Finder’s sidebar. The installed app stays in Applications.
@@ -111,7 +113,7 @@ The green **Plant Stories** book on the shelf contains a short care guide. These
 
 <img src="docs/images/player.png" width="420" alt="A CD inserted into the wall-mounted player with its black pull cord below">
 
-Choose from **my cozy room**, **Dreamy Mode**, and **Tomato Farm**. Return the current CD before loading another. Music and effects have separate volume controls in Settings.
+Choose from **my cozy room**, **Moonlit Notes**, and **Apricot Afternoon**. Return the current CD before loading another. Music and effects have separate volume controls in Settings.
 
 ## Set the weather and time of day
 
@@ -157,3 +159,7 @@ Saved photos remain available after restarting the app. They are stored locally 
 - `.github/workflows/release.yml` — builds a universal DMG and prepares draft releases.
 
 Local weather is provided by [Open-Meteo](https://open-meteo.com/).
+
+## Original replacement music
+
+**Moonlit Notes** (2:06.8, 74 BPM) and **Apricot Afternoon** (2:01.8, 82 BPM) are procedurally composed for this project. All instruments and percussion are synthesized; no external samples, recordings, melodies, or audio from the removed tracks are used. Their generation source and build instructions are in [scripts/audio](scripts/audio/README.md).

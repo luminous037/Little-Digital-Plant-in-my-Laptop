@@ -2,3 +2,7 @@
 dist/
 .DS_Store
 .swiftpm/
+
+# Removed third-party recordings: do not reintroduce them.
+Dreamy Mode.mp3
+Tomato Farm.mp3

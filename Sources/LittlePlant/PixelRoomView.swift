@@ -230,7 +230,10 @@ final class PixelRoomView: NSView {
             transform.transformStruct = NSAffineTransformStruct(m11:(right.x-origin.x)/256,m12:(right.y-origin.y)/256,m21:(down.x-origin.x)/256,m22:(down.y-origin.y)/256,tX:origin.x,tY:origin.y)
             transform.concat()
             let paragraph = NSMutableParagraphStyle(); paragraph.alignment = .center
-            let attrs: [NSAttributedString.Key:Any] = [.font:NSFont(name:RetroFonts.clock,size:32) ?? NSFont.systemFont(ofSize:32),.foregroundColor:NSColor(white:0.09,alpha:1),.paragraphStyle:paragraph]
+            let baseFont = NSFont(name:RetroFonts.clock,size:32) ?? NSFont.systemFont(ofSize:32)
+            let width = (track.title as NSString).size(withAttributes:[.font:baseFont]).width
+            let font = NSFont(name:RetroFonts.clock,size:32*min(1,240/max(1,width))) ?? baseFont
+            let attrs: [NSAttributedString.Key:Any] = [.font:font,.foregroundColor:NSColor(white:0.09,alpha:1),.paragraphStyle:paragraph]
             (track.title as NSString).draw(in:NSRect(x:3,y:198,width:250,height:42),withAttributes:attrs)
             NSGraphicsContext.restoreGraphicsState()
         }

@@ -5,12 +5,13 @@ struct RoomTrack: Identifiable {
     let id: String
     let title: String
     let file: String
+    var fileExtension = "mp3"
     enum Palette { case sage, lavender, yellow }
     let palette: Palette
     static let library = [
         RoomTrack(id:"cozy-room",title:"my cozy room",file:"my cozy room",palette:.sage),
-        RoomTrack(id:"dreamy-mode",title:"Dreamy Mode",file:"Dreamy Mode",palette:.lavender),
-        RoomTrack(id:"tomato-farm",title:"Tomato Farm",file:"Tomato Farm",palette:.yellow)
+        RoomTrack(id:"dreamy-mode",title:"Moonlit Notes",file:"Moonlit Notes",fileExtension:"m4a",palette:.lavender),
+        RoomTrack(id:"tomato-farm",title:"Apricot Afternoon",file:"Apricot Afternoon",fileExtension:"m4a",palette:.yellow)
     ]
 }
 
@@ -76,7 +77,7 @@ final class RoomMusic: ObservableObject {
         if playing { player?.pause(); playing = false; return }
         do {
             if player == nil {
-                guard let url = Bundle.main.url(forResource:track.file,withExtension:"mp3",subdirectory:"Music") ?? Bundle.module.url(forResource:track.file,withExtension:"mp3") else { throw CocoaError(.fileNoSuchFile) }
+                guard let url = Bundle.main.url(forResource:track.file,withExtension:track.fileExtension,subdirectory:"Music") ?? Bundle.module.url(forResource:track.file,withExtension:track.fileExtension) else { throw CocoaError(.fileNoSuchFile) }
                 player = try AVAudioPlayer(contentsOf:url)
                 player?.numberOfLoops = -1; player?.volume = AudioSettings.shared.musicGain; player?.prepareToPlay()
             }
@@ -95,7 +96,7 @@ final class RoomMusic: ObservableObject {
             do { try await Task.sleep(nanoseconds:2_000_000_000) } catch { return }
             precondition(phase == .loaded && !playing,"Insertion must finish paused")
             pullCord(); precondition(playing && error == nil,"Pull must play the selected track")
-            precondition(player?.url?.lastPathComponent == selected.file+".mp3","Changing CDs must change the actual audio file")
+            precondition(player?.url?.lastPathComponent == selected.file+"."+selected.fileExtension,"Changing CDs must change the actual audio file")
             let other = RoomTrack.library.first { $0.id != selected.id }!
             selectAlbum(id:other.id)
             precondition(track.id == selected.id && phase == .loaded,"Only one CD can occupy the player")
@@ -114,7 +115,7 @@ final class RoomMusic: ObservableObject {
             audio.musicVolume = saved.0; audio.effectsVolume = saved.1; audio.muted = saved.2
             player?.stop(); player = nil; applyVolume()
         }
-        guard let url = Bundle.main.url(forResource:track.file,withExtension:"mp3",subdirectory:"Music") ?? Bundle.module.url(forResource:track.file,withExtension:"mp3") else { preconditionFailure("Missing audio") }
+        guard let url = Bundle.main.url(forResource:track.file,withExtension:track.fileExtension,subdirectory:"Music") ?? Bundle.module.url(forResource:track.file,withExtension:track.fileExtension) else { preconditionFailure("Missing audio") }
         player = try! AVAudioPlayer(contentsOf:url)
         audio.muted = false; audio.musicVolume = 0.23; audio.effectsVolume = 0.4
         applyVolume()
@@ -124,7 +125,7 @@ final class RoomMusic: ObservableObject {
         fputs("PASS: live music/effect volume and global mute applied to audio players\n",stderr)
     }
     func verifyAudio() {
-        guard let url = Bundle.main.url(forResource:track.file,withExtension:"mp3",subdirectory:"Music") ?? Bundle.module.url(forResource:track.file,withExtension:"mp3"),
+        guard let url = Bundle.main.url(forResource:track.file,withExtension:track.fileExtension,subdirectory:"Music") ?? Bundle.module.url(forResource:track.file,withExtension:track.fileExtension),
               let test = try? AVAudioPlayer(contentsOf:url) else { preconditionFailure("Bundled music must decode") }
         precondition(test.duration > 1 && click != nil,"Track and mechanical click must be bundled")
     }
