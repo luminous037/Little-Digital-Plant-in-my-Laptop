@@ -32,6 +32,11 @@ struct LittlePlantApp: App {
         }
         _store = StateObject(wrappedValue: garden)
         DispatchQueue.main.async {
+            if let output = ProcessInfo.processInfo.environment["LITTLE_PLANT_GROWTH_DOCS"] {
+                do { try MonsteraPortrait.exportGrowthExamples(to:URL(fileURLWithPath:output)) }
+                catch { fputs("Growth image export failed: \(error)\n",stderr) }
+                NSApp.terminate(nil); return
+            }
             if let output = ProcessInfo.processInfo.environment["LITTLE_PLANT_ICONSET"] {
                 do { try AppIconRenderer.export(to:URL(fileURLWithPath:output)) }
                 catch { fputs("Icon export failed: \(error)\n",stderr) }

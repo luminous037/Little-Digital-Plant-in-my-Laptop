@@ -74,6 +74,19 @@ The images below are actual captures of the running app in English, using isolat
 
 ## Care for your plant
 
+**Your plant grows into different shapes depending on how you care for it.** Water, airflow, light, and fertilizer affect new leaf growth. The number of leaves and their sizes change as your Monstera grows, pauses, and regrows after pruning.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/growth-starter.png" width="140" alt="Actual plant model with two mature leaves"><br><sub>Two mature leaves</sub></td>
+    <td align="center"><img src="docs/images/growth-sprout.png" width="140" alt="Actual plant model with two mature leaves and a small new third leaf"><br><sub>A small new leaf</sub></td>
+    <td align="center"><img src="docs/images/growth-growing.png" width="140" alt="Actual plant model with four leaves of different sizes"><br><sub>Four leaves, mixed sizes</sub></td>
+    <td align="center"><img src="docs/images/growth-full.png" width="140" alt="Actual plant model with six fully grown leaves"><br><sub>Six fully grown leaves</sub></td>
+  </tr>
+</table>
+
+These examples use the app’s actual 3D plant and growth rules, rather than separate illustrations.
+
 <img src="docs/images/care.png" width="420" alt="Plant care bubble showing Water, Fertilize, soil moisture, fertilizer concentration, and the plant name">
 
 - **Open the care bubble:** click the plant or the bottom leaf button. It shows soil moisture, fertilizer concentration, and a short description of how your plant is doing.
