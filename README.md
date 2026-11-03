@@ -12,20 +12,55 @@ A native macOS app with rough, nostalgic 3D graphics and a handheld-console-insp
 
 ## Install and launch
 
-Requires **macOS 13 or later**. To build from source, install **Xcode Command Line Tools** with Swift 5.9 or later.
+Requires **macOS 13 or later**.
 
-1. Download or clone this project.
-2. Double-click **Run Little Plant.command** in Finder. The first launch builds the app and may take a few minutes.
-3. Look for the **leaf icon in the menu bar**. Click it to open your room directly below the icon. Click it again, or click outside the room, to hide it.
+### Download the app
 
-You can also build and launch from Terminal:
+[**Download Little Plant.dmg for macOS ↓**](https://github.com/luminous037/Little-Digital-Plant-in-my-Laptop/releases/latest/download/Little-Plant.dmg)
+
+Click the download button above in your browser to download the installer directly—no source code or build tools are needed. This link always points to `Little-Plant.dmg` in the latest published release.
+
+> **Release status:** The first public DMG release has not been published yet. The download button will work once `Little-Plant.dmg` is attached to a published GitHub Release. Until then, use [Build from source](#build-from-source) below.
+
+1. **Download:** click **Download Little Plant.dmg for macOS** above. If your browser asks, choose **Save File**. The file is normally saved in **Downloads**.
+2. **Open:** open `Little-Plant.dmg` from your browser’s downloads list or from Finder → Downloads.
+3. **Install:** in the disk image window, drag **Little Plant.app** onto the **Applications** folder shortcut. Wait for copying to finish.
+4. **Eject:** eject **Little Plant** from Finder’s sidebar. The installed app stays in Applications.
+5. **Launch:** open Finder → Applications → **Little Plant**. Look for the leaf icon in the menu bar; there is no Dock icon.
+6. **Open your room:** click the leaf icon. Click it again, or click outside the room, to hide it.
+
+If you have an older copy running, quit it from the menu-bar icon before replacing it in Applications.
+
+The app runs in the menu bar and does not appear in the Dock. Right-click the leaf icon and choose **Quit Little Plant** to exit. You can also use **Settings → Quit**.
+
+Current development builds are ad-hoc signed and are not notarized by Apple, so macOS may require you to approve the app in **System Settings → Privacy & Security** on first launch.
+
+### Build from source
+
+Install **Xcode Command Line Tools** with Swift 5.9 or later. Download or clone the project, then double-click **Run Little Plant.command** in Finder. It builds and opens the app. The first build may take a few minutes.
+
+Or use Terminal:
 
 ```sh
 ./scripts/build-app.sh
 open "dist/Little Plant.app"
 ```
 
-After building, drag **dist/Little Plant.app** into **Applications** if you want to keep it there. Open that app for subsequent launches; you do not need to rebuild it each time. The app runs in the menu bar and does not appear in the Dock. Right-click the menu-bar leaf icon and choose **Quit Little Plant** to exit. You can also use **Settings → Quit**.
+### Package a DMG
+
+```sh
+./scripts/build-dmg.sh
+```
+
+This creates `dist/Little-Plant.dmg` and its SHA-256 checksum. The installer contains the app and a shortcut to Applications for drag-and-drop installation. By default it targets your build Mac's architecture. To package a universal app for both Apple silicon and Intel Macs:
+
+```sh
+LITTLE_PLANT_UNIVERSAL=1 ./scripts/build-dmg.sh
+```
+
+The GitHub Actions packaging workflow builds a universal DMG. Run it manually to download the installer artifact, or push a version tag such as `v0.1.0` to create a **draft release** with the installer attached. Review and publish the draft to make the direct download button work. Keep the release asset named exactly `Little-Plant.dmg`, since the README download URL uses that filename. Alternatively, create a GitHub Release manually, upload `dist/Little-Plant.dmg` and `dist/Little-Plant.dmg.sha256`, and publish it. A draft release is not publicly downloadable. After publishing the first release, remove the release-status notice above.
+
+Apple Developer ID signing and notarization are not configured in this workflow.
 
 On first launch, macOS may ask to use your location for local weather. If you decline, the room uses virtual weather. No API key is required.
 
@@ -105,5 +140,7 @@ Saved photos remain available after restarting the app. They are stored locally 
 - `Sources/LittlePlant/Resources/AppIcon.icns` — application icon built from the project’s 3D plant.
 - `docs/images/` — the application icon preview and actual app screenshots used in this guide.
 - `scripts/build-app.sh` — builds and packages `dist/Little Plant.app`.
+- `scripts/build-dmg.sh` — creates the drag-and-drop DMG installer.
+- `.github/workflows/release.yml` — builds a universal DMG and prepares draft releases.
 
 Local weather is provided by [Open-Meteo](https://open-meteo.com/).
