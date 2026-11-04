@@ -16,6 +16,9 @@ enum LeafPreview {
         }
         maintain(scenario == "leaf-empty" ? 144 : (scenario == "leaf-cut" ? 36 : (scenario == "leaf-yellow" ? 48 : 24)),moisture:0)
         switch scenario {
+        case "leaf-all-withered":
+            maintain(144,moisture:0)
+            precondition(p.leaves.allSatisfy { $0.phase == .withered },"Documentation must show all six leaves visibly withered")
         case "leaf-withered": maintain(24)
         case "leaf-new", "leaf-paused", "leaf-small-yellow", "leaf-fertilizer-zero":
             for id in p.prunableLeafIDs { p.pruneLeaf(id:id) }

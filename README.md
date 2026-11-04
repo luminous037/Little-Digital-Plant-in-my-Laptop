@@ -101,6 +101,14 @@ These examples use the app’s actual 3D plant and growth rules, rather than sep
 
 The green **Plant Stories** book on the shelf contains a short care guide. These are simplified game rules, rather than horticultural advice.
 
+### When leaves wilt
+
+**Too little water, too much water, or prolonged exposure to cold night air can make leaves turn yellow and eventually wilt.** Damage starts with individual leaves, so keep an eye on the soil moisture and avoid leaving the window open through long, cold nights.
+
+<img src="docs/images/withered.png" width="360" alt="Actual app screenshot showing all six leaves dark, dried, and bending downward, with the scissors button for pruning damaged leaves">
+
+Yellow or dried leaves will not turn green again. Click the **scissors button**, then click the damaged leaf to trim it. After pruning, restore a good balance of water, daylight, and airflow: **a new leaf can sprout in the empty spot and grow in its place**. New leaves grow one at a time and pause when growing conditions are no longer suitable.
+
 ## Play a lo-fi CD
 
 <img src="docs/images/music.png" width="420" alt="The my cozy room CD album brought forward from the shelf">
