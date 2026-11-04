@@ -10,8 +10,8 @@ struct RoomTrack: Identifiable {
     let palette: Palette
     static let library = [
         RoomTrack(id:"cozy-room",title:"my cozy room",file:"my cozy room",palette:.sage),
-        RoomTrack(id:"dreamy-mode",title:"Moonlit Notes",file:"Moonlit Notes",fileExtension:"m4a",palette:.lavender),
-        RoomTrack(id:"tomato-farm",title:"Apricot Afternoon",file:"Apricot Afternoon",fileExtension:"m4a",palette:.yellow)
+        RoomTrack(id:"dreamy-mode",title:"Pillowcase Moon",file:"Pillowcase_Moon",palette:.lavender),
+        RoomTrack(id:"tomato-farm",title:"Starlight Through the Blinds",file:"Starlight_Through_the_Blinds",palette:.yellow)
     ]
 }
 
