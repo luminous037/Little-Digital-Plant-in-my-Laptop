@@ -96,7 +96,7 @@ These examples use the app’s actual 3D plant and growth rules, rather than sep
 - **Ventilate:** click the window to open or close it. Open it after watering, then close it before a long, cold night.
 - **Fertilize:** choose **Fertilize** to drop four pellets into the pot. Fertilizer helps new leaves grow faster; your plant does not need it to stay green. Avoid keeping the concentration at 100% for too long.
 - **Trim:** when leaves turn yellow or dry out, use the scissors button and click the damaged leaf. Yellow leaves do not turn green again.
-- **Grow:** keep water, daylight, and ventilation balanced. New leaves grow one at a time, up to six leaves. A new leaf takes about two days of good growing conditions at the base growth rate; fertilizer can speed this up.
+- **Grow:** keep water, daylight, and ventilation balanced. New leaves grow one at a time, up to six leaves. At the current 1.5× plant-time rate, a new leaf takes about 32 real hours of good growing conditions without fertilizer; fertilizer can speed this up.
 - **Name your plant:** click the pencil beside its name in the care bubble.
 
 The green **Plant Stories** book on the shelf contains a short care guide. These are simplified game rules, rather than horticultural advice.
@@ -108,6 +108,12 @@ The green **Plant Stories** book on the shelf contains a short care guide. These
 <img src="docs/images/withered.png" width="360" alt="Actual app screenshot showing all six leaves dark, dried, and bending downward, with the scissors button for pruning damaged leaves">
 
 Yellow or dried leaves will not turn green again. Click the **scissors button**, then click the damaged leaf to trim it. After pruning, restore a good balance of water, daylight, and airflow: **a new leaf can sprout in the empty spot and grow in its place**. New leaves grow one at a time and pause when growing conditions are no longer suitable.
+
+### Plant time and sleep
+
+All time-dependent plant processes run at **1.5× real time**, including soil drying, fertilizer consumption, airflow, root stress, growth, yellowing exposure, and withering. For example, one real hour now advances the plant by 1.5 hours; a 24-hour damage threshold is reached after about 16 real hours of continuous exposure. The open-window night threshold is about 32 real night hours.
+
+The plant keeps changing while its menu-bar window is hidden. If your Mac sleeps while Little Plant is running, the full elapsed time is applied when it wakes, using the last known weather and window position. Fresh local weather is requested afterwards when needed; historical weather during sleep is not retrieved. Quitting the app still pauses plant time until the next launch.
 
 ## Play a lo-fi CD
 
@@ -127,7 +133,7 @@ Choose from **my cozy room**, **Pillowcase Moon**, and **Starlight Through the B
 
 <img src="docs/images/weather.png" width="480" alt="The running room and its Weather menu with Simulation, Location, Day, Night, Clear, and Rain controls">
 
-Click the bottom weather button. Select **Simulation**, then choose **Day** or **Night**, and **Clear** or **Rain** independently. All four combinations are available. This changes the room’s environment; the clock still shows your Mac’s current local time, and plant growth continues in real time.
+Click the bottom weather button. Select **Simulation**, then choose **Day** or **Night**, and **Clear** or **Rain** independently. All four combinations are available. This changes the room’s environment; the clock still shows your Mac’s current local time, and plant time advances at 1.5× real time.
 
 Select **My location** to use local weather instead. If location or weather is unavailable, the app falls back to virtual weather.
 

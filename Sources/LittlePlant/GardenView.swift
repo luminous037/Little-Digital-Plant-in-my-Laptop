@@ -226,6 +226,7 @@ struct GardenView: View {
                 }
             }
             if scenario == "docs-weather" { try? await Task.sleep(nanoseconds:350_000_000); tray = .weather }
+            if scenario == "sleep-clock" { await store.verifySleepProgression() }
             if scenario == "photo-empty" { openPhotoBook() }
             if scenario == "fertilizer" { store.feed() }
             if scenario == "plant-name-edit" { showCare = true; startNameEdit() }
@@ -253,6 +254,7 @@ struct GardenView: View {
             }
         }
         .onAppear {
+            store.tick()
             if CommandLine.arguments.contains("--render-preview"), ["book", "book-cover-cycle", "book-closing", "book-opening", "book-opening-test", "book-open", "book-about", "book-turn", "book-curl", "book-curl-back"].contains(ProcessInfo.processInfo.environment["LITTLE_PLANT_SCENARIO"] ?? "") { showBook = true }
             if CommandLine.arguments.contains("--render-preview"), ["care", "leaf-fertilizer-zero", "plant-name-edit", "plant-name-saved"].contains(ProcessInfo.processInfo.environment["LITTLE_PLANT_SCENARIO"] ?? "") { showCare = true }
         }
@@ -502,8 +504,8 @@ struct GardenView: View {
                 Divider()
                 SoundSettingsView(english:store.english)
                 if guide {
-                    Text(t("흙 습기 90% 이상 또는 10% 이하가 연속 24시간 이어지면 잎이 노래져요. 창문을 열어둔 밤 시간이 누적 48시간이 되어도 노래져요. 창문을 닫으면 밤 시간 기록은 초기화돼요. 비료는 새잎을 빠르게 키워요. 0%여도 기본 속도로 자라며, 100%가 연속 24시간 유지되면 잎이 노래져요.", "Leaves yellow after 24 continuous hours at soil moisture ≥90% or ≤10%, or 48 accumulated night hours with the window open. Closing the window resets the night timer. Fertilizer speeds new leaves; 0% allows normal growth. Staying at 100% for 24 hours yellows a leaf.")).font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
-                    Text(t("가상 날씨에서도 실제 시간에 맞춰 자라요. 위치는 날씨 조회에만 사용하며 저장하지 않습니다.", "Plants grow in real time with virtual weather too. Location is used only for weather and is not saved.")).font(.system(size: 10)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Text(t("흙 습기 90% 이상 또는 10% 이하가 연속 약 16시간 이어지면 잎이 노래져요. 창문을 열어둔 밤 시간이 누적 약 32시간이 되어도 노래져요. 창문을 닫으면 밤 시간 기록은 초기화돼요. 비료는 새잎을 빠르게 키워요. 0%여도 기본 속도로 자라며, 100%가 연속 약 16시간 유지되면 잎이 노래져요.", "Leaves yellow after about 16 continuous hours at soil moisture ≥90% or ≤10%, or about 32 accumulated night hours with the window open. Closing the window resets the night timer. Fertilizer speeds new leaves; 0% allows normal growth. Staying at 100% for about 16 hours yellows a leaf.")).font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
+                    Text(t("식물의 시간은 실제 시간보다 1.5배 빠르게 흐르며 잠자기 시간도 반영해요. 위치는 날씨 조회에만 사용하며 저장하지 않습니다.", "Plant time runs at 1.5× real time, including time spent asleep. Location is used only for weather and is not saved.")).font(.system(size: 10)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 Divider()
                 HStack {

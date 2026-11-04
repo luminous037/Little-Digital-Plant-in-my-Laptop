@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import CoreLocation
 import PlantCore
 
@@ -24,7 +25,9 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var noteEN = "A little green, a little everyday."
     private let location = CLLocationManager()
     private var timer: Timer?
-    private var lastTick = Date()
+    private var clock = PlantClock()
+    private var advancesTime = !CommandLine.arguments.contains("--render-preview")
+    private var sleepObservers: [NSObjectProtocol] = []
     private var lastWeatherAttempt = Date.distantPast
     private var liveClimate: Climate?
     private var liveLocation = ""
@@ -45,15 +48,59 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         if defaults.data(forKey:"plant.v1") == nil { save() }
         location.delegate = self
         location.desiredAccuracy = kCLLocationAccuracyThreeKilometers
-        // Keep simulation paused until launch authorization selects the weather source.
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+        if advancesTime {
+            timer = Timer.scheduledTimer(withTimeInterval:1,repeats:true) { [weak self] _ in
+                Task { @MainActor in self?.tick() }
+            }
+            observeSystemSleep()
         }
+    }
+    private func observeSystemSleep() {
+        guard sleepObservers.isEmpty else { return }
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.willSleepNotification,NSWorkspace.didWakeNotification] {
+            sleepObservers.append(center.addObserver(forName:name,object:nil,queue:.main) { [weak self] _ in
+                Task { @MainActor in self?.tick() }
+            })
+        }
+    }
+    func verifySleepProgression() async {
+        let fixture = GardenStore()
+        fixture.plant = Plant(); fixture.plant.adopted = true
+        var expected = fixture.plant
+        expected.advance(hours:12,climate:fixture.climate)
+        fixture.clock = PlantClock(now:Date().addingTimeInterval(-8*3600))
+        fixture.advancesTime = true
+        fixture.observeSystemSleep()
+        NSWorkspace.shared.notificationCenter.post(name:NSWorkspace.didWakeNotification,object:nil)
+        try? await Task.sleep(nanoseconds:150_000_000)
+        precondition(abs(fixture.plant.ageHours-12) < 0.01,"Wake notification must apply all eight elapsed hours at 1.5x without opening a window")
+        precondition(abs(fixture.plant.moisture-expected.moisture) < 0.05,"Wake catch-up must advance drying")
+        let age = fixture.plant.ageHours
+        fixture.tick(now:fixture.clock.lastUpdate)
+        precondition(fixture.plant.ageHours == age,"Repeated wake/timer events must not replay elapsed time")
+        // A care action must settle an otherwise unprocessed gap before changing the soil.
+        fixture.plant = Plant(); fixture.plant.adopted = true
+        fixture.clock = PlantClock(now:Date().addingTimeInterval(-8*3600))
+        fixture.waterFromStream(10)
+        precondition(abs(fixture.plant.moisture-(expected.moisture+10)) < 0.05,"Watering must occur after sleep drying, not before it")
+        fixture.advancesTime = false
+        fputs("PASS: native wake notification, hidden-window catch-up, 1.5x drying, duplicate wake guard and care-after-sleep ordering\n",stderr)
+    }
+    deinit {
+        timer?.invalidate()
+        for observer in sleepObservers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
+    }
+    /// Apply elapsed time under the previous environment before any care or weather change.
+    private func settleTime(to now:Date = Date()) {
+        guard advancesTime else { return }
+        if clock.advance(to:now,plant:&plant,climate:climate) { save() }
     }
     func t(_ ko: String, _ en: String) -> String { english ? en : ko }
     func save() { guard !CommandLine.arguments.contains("--render-preview") else { return }; if let data = try? JSONEncoder().encode(plant) { UserDefaults.standard.set(data, forKey: "plant.v1") } }
     func message(_ ko: String, _ en: String) { noteKO = ko; noteEN = en; save() }
     func adopt() {
+        clock = PlantClock()
         wateringMode = false; pruningMode = false
         plant = Plant(); plant.adopted = true
         message("몬스테라가 집에 왔어요. 첫날은 천천히 살펴봐요.", "Monstera is home. Take a moment to get acquainted.")
@@ -72,13 +119,16 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         wateringMode = false; pruningMode.toggle()
     }
     @discardableResult func pruneLeaf(_ id: Int) -> Bool {
-        guard pruningMode, plant.pruneLeaf(id: id) else { return false }
+        guard pruningMode else { return false }
+        settleTime()
+        guard plant.pruneLeaf(id:id) else { return false }
         if plant.prunableLeafIDs.isEmpty { pruningMode = false }
         message("상한 잎을 잘랐어요. 좋은 환경에서 그 자리에 새잎이 나요.", "Damaged leaf cut. Good care will sprout a replacement in its place.")
         return true
     }
     func waterFromStream(_ amount: Double) {
         guard plant.adopted, amount.isFinite, amount > 0 else { return }
+        settleTime()
         let wasWet = plant.moisture > 30
         plant.water(amount: amount)
         noteKO = wasWet ? "흙이 이미 촉촉해요. 물을 멈추고 환기해 주세요." : "흙이 물을 머금고 있어요. 물을 준 뒤 잠깐 환기해요."
@@ -87,20 +137,21 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     func feed() {
         guard plant.adopted else { return }
+        settleTime()
         plant.feed()
         fertilizerPulse += 1
-        message(plant.fertilizer >= 100 ? "비료가 가득해요. 100%가 하루 이어지면 잎이 노래져요." : "알비료를 줬어요. 새잎이 더 빠르게 자라요.", plant.fertilizer >= 100 ? "Fertilizer is full. Staying at 100% for a day yellows leaves." : "Fertilizer added. New leaves will grow faster.")
+        message(plant.fertilizer >= 100 ? "비료가 가득해요. 100%가 약 16시간 이어지면 잎이 노래져요." : "알비료를 줬어요. 새잎이 더 빠르게 자라요.", plant.fertilizer >= 100 ? "Fertilizer is full. Staying at 100% for about 16 hours yellows leaves." : "Fertilizer added. New leaves will grow faster.")
     }
-    func toggleWindow() { plant.windowOpen.toggle(); if !plant.windowOpen { plant.openHours = 0 }; message(plant.windowOpen ? "창문을 열었어요. 오랫동안 열어두지 마세요." : "창문을 닫았어요.", plant.windowOpen ? "Window open. Remember to close it later." : "Window closed.") }
+    func toggleWindow() { settleTime(); plant.windowOpen.toggle(); if !plant.windowOpen { plant.openHours = 0 }; message(plant.windowOpen ? "창문을 열었어요. 오랫동안 열어두지 마세요." : "창문을 닫았어요.", plant.windowOpen ? "Window open. Remember to close it later." : "Window closed.") }
     func advance(_ hours: Double) { plant.advance(hours: hours, climate: climate); save() }
-    func tick() {
-        let now = Date(); let elapsed = min(5, now.timeIntervalSince(lastTick)); lastTick = now
-        // Weather simulation changes the environment, not the speed of the plant clock.
-        if plant.adopted { advance(elapsed/3600) }
+    func tick(now:Date = Date()) {
+        // Last-known weather and the last window state apply during sleep; fetch fresh weather afterwards.
+        settleTime(to:now)
         if !simulation, now.timeIntervalSince(lastWeatherAttempt) > 900 && !loading, let coordinate = lastCoordinate { fetch(coordinate) }
     }
 
     func setPreset(_ value: String) {
+        settleTime()
         preset = value
         switch value {
         case "rain": climate = Climate(temperature: 18, humidity: 88, daylight: true, cloud: 95, rain: true)
@@ -126,7 +177,7 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         requestWeather()
     }
     func setMode(_ sim: Bool) {
-        running = false; lastTick = Date()
+        settleTime(); running = false
         if sim {
             wantsLiveWeather = false; awaitingAuthorization = false
             requestID = UUID(); locationTimeout?.cancel(); loading = false; weatherStatus = ""
@@ -200,10 +251,11 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     private func fail(_ reason: String) {
+        settleTime()
         requestID = UUID(); loading = false; awaitingAuthorization = false
         weatherStatus = reason; lastWeatherAttempt = Date(); locationTimeout?.cancel()
         simulation = true; running = false; preset = "sun"; climate = Climate()
-        locationLabel = t("가상 날씨", "Virtual weather"); lastTick = Date()
+        locationLabel = t("가상 날씨", "Virtual weather")
     }
     func verifyWeatherFallback() {
         precondition(LocationWeatherPolicy.action(for:.notDetermined) == .askPermission)
@@ -236,7 +288,7 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let updated = Climate(temperature: result.temperature_2m, humidity: result.relative_humidity_2m, daylight: result.is_day == 1, cloud: result.cloud_cover, rain: result.precipitation > 0)
                 liveClimate = updated; weatherDate = Date(); weatherStatus = "ok"; loading = false; locationTimeout?.cancel()
                 liveLocation = String(format: "%.2f°, %.2f°", coordinate.latitude, coordinate.longitude)
-                if wantsLiveWeather { simulation = false; running = false; lastTick = Date(); climate = updated; locationLabel = liveLocation }
+                if wantsLiveWeather { settleTime(); simulation = false; running = false; climate = updated; locationLabel = liveLocation }
                 // Reverse geocoding is cosmetic; weather remains usable if it fails.
                 if let place = try? await CLGeocoder().reverseGeocodeLocation(CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)).first {
                     guard id == requestID else { return }
@@ -250,10 +302,10 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     var advice: String {
         if plant.leaves.contains(where: { $0.phase == .withered }) { return t("마른 잎은 가위로 잘라 새잎 자리를 비워 주세요.", "Snip the dried leaves to make room for new growth.") }
         if plant.leaves.contains(where: { $0.phase == .yellow }) { return t("노란 잎은 돌아오지 않아요. 가위로 잘라 주세요.", "Yellow leaves cannot turn green. Snip them with scissors.") }
-        if plant.fertilizer >= 100 { return t("비료 100%가 하루 지속되면 과다 황변이 생겨요.", "Staying at 100% fertilizer for a day yellows a leaf.") }
+        if plant.fertilizer >= 100 { return t("비료 100%가 약 16시간 지속되면 과다 황변이 생겨요.", "Staying at 100% fertilizer for about 16 hours yellows a leaf.") }
         if plant.leaves.contains(where: { $0.phase == .green && $0.maturity < 1 }) {
             if !plant.canGrowLeaves(in: climate) { return t("새잎이 쉬고 있어요. 물·햇빛·통풍을 살펴봐요.", "New leaves paused. Check water, light and airflow.") }
-            return plant.fertilizer > 0 ? t("비료 덕분에 새잎이 더 빠르게 자라고 있어요.", "Fertilizer is helping new leaves grow faster.") : t("새잎이 기본 속도로 자라고 있어요. 약 이틀 걸려요.", "New leaves are growing at their normal two-day pace.")
+            return plant.fertilizer > 0 ? t("비료 덕분에 새잎이 더 빠르게 자라고 있어요.", "Fertilizer is helping new leaves grow faster.") : t("새잎이 기본 속도로 자라고 있어요. 좋은 환경에서 약 32시간 걸려요.", "New leaves take about 32 hours of good conditions at the base growth rate.")
         }
         if plant.leaves.contains(where:{ $0.phase == .empty }) { return t("좋은 환경에서 새잎이 한 장씩 차례로 나요.", "Good care brings new leaves, one at a time.") }
         if plant.rootStress > 20 { return t("뿌리가 답답해요. 물주기를 쉬고 환기해 주세요.", "Roots need air. Pause watering and ventilate.") }

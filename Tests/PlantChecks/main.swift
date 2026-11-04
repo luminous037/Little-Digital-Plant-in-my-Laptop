@@ -403,3 +403,5 @@ try checks.testFertilizerPersistenceAndOldTimers()
 checks.testSimultaneousThresholdsStaySequential()
 try checks.testLegacyPestsAreRemoved()
 print("PASS: 34 plant checks, including exact 24/48-hour exposure, inclusive thresholds, timer resets/persistence, no early yellowing, irreversible per-leaf lifecycle, pruning, 48-hour growth, pause/resume, small-leaf damage, six-slot limit and save migration")
+
+try checkPlantClock()
