@@ -22,6 +22,7 @@ struct RoomScene: NSViewRepresentable {
     var hasPhotoAlbum = false
     var onPhotoAlbumTap: () -> Void = {}
     var camera: RoomCamera? = nil
+    var stormEpoch:Date? = nil
     func makeCoordinator() -> Coordinator { Coordinator() }
     final class Coordinator { var signature = "" }
     func makeNSView(context: Context) -> PixelRoomView { PixelRoomView() }
@@ -37,7 +38,7 @@ struct RoomScene: NSViewRepresentable {
         view.setWateringMode(wateringMode, onSoilWater: onSoilWater, onEnd: onWateringEnd)
         view.setPruningMode(pruningMode, allowed: plant.prunableLeafIDs, onPrune: onPruneLeaf)
         let leafSignature = plant.leaves.map { "\($0.id):\($0.phase.rawValue):\(Int($0.maturity*48)):\(Int($0.yellowHours/2))" }.joined(separator: ",")
-        let signature = "\(hasPhotoAlbum)-\(skyHour)-\(plant.windowOpen)-\(Int(plant.growth / 5))-\(Int(plant.yellowing / 8))-\(Int(plant.moisture / 10))-\(climate)-\(plant.adopted)-\(Int(plant.fertilizer / 10))-\(leafSignature)"
+        let signature = "\(stormEpoch?.timeIntervalSinceReferenceDate ?? 0)-\(hasPhotoAlbum)-\(skyHour)-\(plant.windowOpen)-\(Int(plant.growth / 5))-\(Int(plant.yellowing / 8))-\(Int(plant.moisture / 10))-\(climate)-\(plant.adopted)-\(Int(plant.fertilizer / 10))-\(leafSignature)"
         guard signature != context.coordinator.signature else { return }
         context.coordinator.signature = signature
         view.setScene(makeRoom())
@@ -77,11 +78,13 @@ struct RoomScene: NSViewRepresentable {
         for i in 0..<7 {
             box(0.19, CGFloat(0.2 + Double((i * 7) % 4) * 0.09), 0.02, Float(i) * 0.22 - 0.01, 1.52, -1.375, NSColor(white: climate.daylight ? 0.65 : 0.25, alpha: 1))
         }
-        if !climate.daylight {
+        if !climate.daylight && climate.cloud < 85 {
             let moon = SCNSphere(radius: 0.12); moon.segmentCount = 10; moon.materials = [material(NSColor(white: 0.95, alpha: 1))]
             let n = SCNNode(geometry: moon); n.position = SCNVector3(1.15,2.7,-1.35); root.addChildNode(n)
         }
         if climate.rain { root.addChildNode(PixelRainNode(daylight:climate.daylight)) }
+        if climate.condition == .snow { root.addChildNode(PixelSnowNode(daylight:climate.daylight)) }
+        if climate.condition == .thunderstorm { root.addChildNode(LightningNode(epoch:stormEpoch ?? Date(),daylight:climate.daylight)) }
         for x: Float in [-0.22, 1.52] { box(0.09, 1.9, 0.13, x, 2.22, -1.31, .white) }
         for y: Float in [1.30, 3.14] { box(1.83, 0.1, 0.17, 0.65, y, -1.30, .white) }
         box(2.04, 0.12, 0.42, 0.65, 1.26, -1.22, NSColor(white: 0.92, alpha: 1))

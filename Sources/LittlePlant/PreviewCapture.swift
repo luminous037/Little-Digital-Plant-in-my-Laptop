@@ -44,7 +44,7 @@ enum PreviewCapture {
             view.displayIfNeeded()
             view.cacheDisplay(in: view.bounds, to: bitmap)
             var image = NSImage(size: view.bounds.size); image.addRepresentation(bitmap)
-            if scenario == "docs-weather" {
+            if ["docs-weather","simulation-effects"].contains(scenario ?? "") {
                 let windows = NSApp.windows.filter { $0.isVisible && $0.contentView != nil && $0.frame.width > 200 }
                 var captures: [(NSRect,NSImage)] = []
                 for window in windows {

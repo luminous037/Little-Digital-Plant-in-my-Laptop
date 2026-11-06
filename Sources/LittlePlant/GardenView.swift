@@ -48,7 +48,7 @@ struct GardenView: View {
                           wateringMode: store.wateringMode, pruningMode: store.pruningMode, onPruneLeaf: store.pruneLeaf, onSoilWater: store.waterFromStream, onWateringEnd: store.save,
                           onBackgroundTap: { showCare = false },
                           onWindowTap: { if store.plant.adopted { perform("wind", store.toggleWindow) } },
-                          onPlantTap: openCare, onBookTap: openBook, interactionsEnabled: !showBook && !showPhotoBook && pendingPhoto == nil && !photoBusy, music:music, onAlbumTap:openAlbum, skyHour:store.simulation ? (store.climate.daylight ? 8 : 22) : Calendar.autoupdatingCurrent.component(.hour,from:Date()), fertilizerPulse:store.fertilizerPulse, hasPhotoAlbum:photos.hasAlbum, onPhotoAlbumTap:openPhotoBook, camera:camera)
+                          onPlantTap: openCare, onBookTap: openBook, interactionsEnabled: !showBook && !showPhotoBook && pendingPhoto == nil && !photoBusy, music:music, onAlbumTap:openAlbum, skyHour:store.simulation ? (store.climate.daylight ? 8 : 22) : Calendar.autoupdatingCurrent.component(.hour,from:Date()), fertilizerPulse:store.fertilizerPulse, hasPhotoAlbum:photos.hasAlbum, onPhotoAlbumTap:openPhotoBook, camera:camera, stormEpoch:store.stormStart)
                     .help(store.pruningMode ? t("노랗거나 마른 잎을 눌러 잘라 주세요.", "Click a yellow or dried leaf to snip it.") : (store.wateringMode ? t("물뿌리개를 잡고 흙 위로 드래그하세요.", "Grab the can and drag its spray over the soil.") : t("식물·창문·책·CD를 눌러 보세요. 플레이어 줄을 클릭해 주세요.", "Click the plant, window, book or CD. Click the player cord.")))
                     .accessibilityLabel(t("식물과 창문, 책장", "Plant, window and bookshelf"))
                     .accessibilityAction(named:Text("my cozy room")) { openAlbum("cozy-room") }
@@ -134,7 +134,7 @@ struct GardenView: View {
             Rectangle().fill(LinearGradient(colors: [Color(white: 0.66), .white, Color(white: 0.88)], startPoint: .top, endPoint: .bottom)).frame(height: 5).padding(.top, 6)
             HStack(spacing: 30) {
                 homeTile("leaf.fill", .green, .care, t("돌봄", "Care"))
-                homeTile(store.climate.rain ? "cloud.rain.fill" : (store.climate.daylight ? "sun.max.fill" : "moon.fill"), .cyan, .weather, t("날씨", "Weather"))
+                homeTile(weatherSymbol, .cyan, .weather, t("날씨", "Weather"))
                 Button(action:takePhoto) {
                     Image(systemName:"camera.fill").font(.system(size:27,weight:.regular)).foregroundStyle(Color.gray.gradient)
                         .shadow(color:.white,radius:0,y:1).frame(width:55,height:52)
@@ -231,6 +231,15 @@ struct GardenView: View {
             if scenario == "fertilizer" { store.feed() }
             if scenario == "plant-name-edit" { showCare = true; startNameEdit() }
             if scenario == "plant-name-saved" { _ = store.renamePlant("초록이 🌱"); showCare = true }
+            if scenario == "weather-effects" {
+                store.verifyWeatherCombinations(); PixelSnowNode.verify(); LightningNode.verify(); ThunderAmbience.verify()
+                store.setPreset("snow-night")
+            }
+            if scenario == "snow-day" { store.setPreset("snow") }
+            if scenario == "snow-night" { store.setPreset("snow-night") }
+            if scenario == "storm-flash" { store.setPreset("storm-night") }
+            if scenario == "simulation-effects" { store.setPreset("storm"); try? await Task.sleep(nanoseconds:350_000_000); tray = .weather }
+            if scenario == "drizzle-code" { store.climate = Climate(temperature:17,humidity:94,cloud:90,weatherCode:51) }
             if scenario == "rain-animation" { PixelRainNode.verify(); store.setPreset("rain") }
             if scenario == "rain-animation-night" { PixelRainNode.verify(); store.setPreset("rain-night") }
             if scenario == "pixel-sky" { PixelSky.verify() }
@@ -344,12 +353,11 @@ struct GardenView: View {
     }
     private var weatherSymbol: String {
         if !store.simulation && !store.hasLiveWeather { return store.loading ? "hourglass" : "cloud.slash" }
-        return store.climate.rain ? "cloud.rain" : (!store.climate.daylight ? "moon" : (store.climate.cloud > 65 ? "cloud" : "sun.max"))
+        return store.climate.condition.symbol(daylight:store.climate.daylight)
     }
     private var weatherReadout: String {
         guard store.simulation || store.hasLiveWeather else { return store.loading ? t("연결 중", "CONNECTING") : t("날씨 미연결", "OFFLINE") }
-        let condition = store.climate.rain ? t("비", "RAIN") : (!store.climate.daylight ? t("밤", "NIGHT") : (store.climate.cloud > 65 ? t("흐림", "CLOUDY") : t("맑음", "CLEAR")))
-        return condition
+        return store.climate.condition.label(english:store.english,daylight:store.climate.daylight)
     }
     private func openAlbum(_ trackID:String = RoomTrack.library[0].id) {
         showCare = false; tray = nil; store.wateringMode = false; store.pruningMode = false
@@ -470,13 +478,15 @@ struct GardenView: View {
                         Text(t("위치나 날씨를 사용할 수 없어 가상 날씨를 표시하고 있어요.", "Using virtual weather because location or weather is unavailable."))
                             .font(.system(size:11)).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
                     }
-                    Picker(t("시간", "Time"),selection:Binding(get:{store.climate.daylight},set:{store.setSimulatedWeather(daylight:$0,rain:store.climate.rain)})) {
+                    Picker(t("시간", "Time"),selection:Binding(get:{store.climate.daylight},set:{store.setSimulatedWeather(daylight:$0,sky:store.climate.simulationSky)})) {
                         Text(t("낮", "Day")).tag(true)
                         Text(t("밤", "Night")).tag(false)
                     }.pickerStyle(.segmented)
-                    Picker(t("하늘", "Sky"),selection:Binding(get:{store.climate.rain},set:{store.setSimulatedWeather(daylight:store.climate.daylight,rain:$0)})) {
-                        Text(t("맑음", "Clear")).tag(false)
-                        Text(t("비", "Rain")).tag(true)
+                    Picker(t("하늘", "Sky"),selection:Binding(get:{store.climate.simulationSky},set:{store.setSimulatedWeather(daylight:store.climate.daylight,sky:$0)})) {
+                        Text(t("맑음", "Clear")).tag(SimulationSky.clear)
+                        Text(t("비", "Rain")).tag(SimulationSky.rain)
+                        Text(t("눈", "Snow")).tag(SimulationSky.snow)
+                        Text(t("뇌우", "Storm")).tag(SimulationSky.storm)
                     }.pickerStyle(.segmented)
                 }
                 if store.simulation || store.hasLiveWeather {

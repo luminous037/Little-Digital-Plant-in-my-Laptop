@@ -39,16 +39,19 @@ enum PixelSky {
         "....########..."
     ].map(Array.init)
     static func hasClouds(climate:Climate,hour:Int) -> Bool {
-        climate.daylight && !climate.rain && climate.cloud < 65 && (5..<12).contains(hour)
+        climate.daylight && [.clear,.partlyCloudy].contains(climate.condition) && (5..<12).contains(hour)
     }
     private static func palette(_ climate:Climate,hour:Int) -> [(Double,Double,Double)] {
+        if climate.condition == .snow {
+            return climate.daylight ? [(0.29,0.37,0.47),(0.44,0.53,0.63),(0.64,0.72,0.80),(0.84,0.88,0.92)] : [(0.035,0.055,0.10),(0.09,0.13,0.20),(0.19,0.25,0.34),(0.34,0.41,0.49)]
+        }
         if !climate.daylight {
             if climate.rain { return [(0.025,0.035,0.075),(0.07,0.09,0.16),(0.13,0.17,0.25),(0.24,0.29,0.37)] }
             return [(0.025,0.045,0.14),(0.07,0.12,0.26),(0.13,0.23,0.40),(0.29,0.40,0.57)]
         }
         if climate.rain { return [(0.24,0.31,0.42),(0.37,0.46,0.56),(0.52,0.61,0.69),(0.72,0.79,0.83)] }
         let clear: [(Double,Double,Double)] = [(0.14,0.43,0.79),(0.27,0.58,0.87),(0.43,0.72,0.93),(0.64,0.84,0.97),(0.86,0.94,0.99)]
-        let grey = min(0.68,0.06+max(0,(climate.cloud-30)/110))
+        let grey = min(0.68,0.06+max(0,(climate.skyCloudCover-30)/110))
         let evening = hour >= 17 ? 0.86 : 1.0
         return clear.map { r,g,b in
             let mean = (r+g+b)/3

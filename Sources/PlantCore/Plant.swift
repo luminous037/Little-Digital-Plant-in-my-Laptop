@@ -6,9 +6,13 @@ public struct Climate: Codable, Equatable {
     public var daylight: Bool
     public var cloud: Double
     public var rain: Bool
-    public init(temperature: Double = 23, humidity: Double = 55, daylight: Bool = true, cloud: Double = 15, rain: Bool = false) {
-        self.temperature = temperature; self.humidity = humidity; self.daylight = daylight; self.cloud = cloud; self.rain = rain
+    public var weatherCode: Int?
+    public init(temperature: Double = 23, humidity: Double = 55, daylight: Bool = true, cloud: Double = 15, rain: Bool = false, weatherCode:Int? = nil) {
+        self.temperature = temperature; self.humidity = humidity; self.daylight = daylight; self.cloud = cloud; self.weatherCode = weatherCode
+        self.rain = WeatherCondition.resolve(code:weatherCode,precipitation:rain,cloud:cloud).bringsRain
     }
+    public var condition:WeatherCondition { .resolve(code:weatherCode,precipitation:rain,cloud:cloud) }
+    public var skyCloudCover:Double { condition == .cloudy || condition == .fog ? max(85,cloud) : cloud }
     public var sunlight: Double { daylight ? max(12, 85 - cloud * 0.65) : 0 }
 }
 

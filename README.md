@@ -131,15 +131,20 @@ Choose from **my cozy room**, **Pillowcase Moon**, and **Starlight Through the B
 
 ## Set the weather and time of day
 
-<img src="docs/images/weather.png" width="480" alt="The running room and its Weather menu with Simulation, Location, Day, Night, Clear, and Rain controls">
+<img src="docs/images/weather.png" width="480" alt="The running room and its Weather menu with Simulation, Location, Day, Night, Clear, Rain, Snow, and Storm controls">
 
-Click the bottom weather button. Select **Simulation**, then choose **Day** or **Night**, and **Clear** or **Rain** independently. All four combinations are available. This changes the room’s environment; the clock still shows your Mac’s current local time, and plant time advances at 1.5× real time.
+Click the bottom weather button. Select **Simulation**, then choose **Day** or **Night**, and **Clear**, **Rain**, **Snow**, or **Storm** independently. All eight combinations are available. This changes the room’s environment; the clock still shows your Mac’s current local time, and plant time advances at 1.5× real time.
 
-Select **My location** to use local weather instead. If location or weather is unavailable, the app falls back to virtual weather.
+Select **My location** to use local weather instead. Live conditions use Open-Meteo’s WMO weather codes as well as precipitation amounts, so drizzle is recognized even when the reported amount is zero. The weather label and button share the same condition; the window uses the rainy sky and rain sound for drizzle. If location or weather is unavailable, the app falls back to virtual weather.
 
 <img src="docs/images/night.png" width="420" alt="The room at night with blue moonlight entering through the window">
 
-Night brings blue moonlight into the room. Rain adds moving pixel rain and ambient rain sounds. Open the window to hear louder rain; turn rain sounds off in Settings whenever you prefer.
+Night brings blue moonlight into the room. Rain adds moving pixel rain and ambient rain sounds. Snow adds slowly drifting pixel snowflakes and a cold, muted sky. Storms add a polygonal lightning bolt, a brief flash through the window into the room, and a delayed thunder sound. These effects work for both local weather and simulation. Open the window to hear louder rain; turn rain sounds off in Settings whenever you prefer. Thunder follows the effects volume and global mute settings, and is also louder with the window open.
+
+<p>
+  <img src="docs/images/snow.png" width="280" alt="Actual app showing falling pixel snow outside the window">
+  <img src="docs/images/storm.png" width="280" alt="Actual app during a lightning flash illuminating the room">
+</p>
 
 ## Take and revisit photos
 
@@ -177,3 +182,5 @@ Local weather is provided by [Open-Meteo](https://open-meteo.com/).
 ## Bundled music
 
 The current library contains **my cozy room**, **Pillowcase Moon**, and **Starlight Through the Blinds**. The latter two recordings were supplied for this project and are packaged in `Sources/LittlePlant/Resources/Music/`. The previous procedurally synthesized recordings and their generator have been removed from the current project.
+
+The thunder effect is synthesized from filtered noise and oscillators without external recordings. Its generation source is `scripts/generate-thunder.py`.

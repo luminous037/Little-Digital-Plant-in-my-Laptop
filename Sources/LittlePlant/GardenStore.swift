@@ -8,14 +8,16 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     let music = RoomMusic()
     let photos = PhotoLibrary.shared
     private let rainAudio = RainAmbience()
-    @Published var plant: Plant { didSet { rainAudio.updateWindow(open:plant.windowOpen) } }
+    private let thunderAudio = ThunderAmbience()
+    var stormStart:Date? { thunderAudio.startDate }
+    @Published var plant: Plant { didSet { rainAudio.updateWindow(open:plant.windowOpen); thunderAudio.updateWindow(open:plant.windowOpen) } }
     @Published var english: Bool { didSet { if !CommandLine.arguments.contains("--render-preview") { UserDefaults.standard.set(english, forKey: "english") } } }
     @Published var simulation = true
     @Published var running = false
     @Published private(set) var fertilizerPulse = 0
     @Published var wateringMode = false
     @Published var pruningMode = false
-    @Published var climate = Climate() { didSet { rainAudio.updateWeather(raining:climate.rain,windowOpen:plant.windowOpen) } }
+    @Published var climate = Climate() { didSet { rainAudio.updateWeather(raining:climate.rain,windowOpen:plant.windowOpen); thunderAudio.updateWeather(storm:climate.condition == .thunderstorm,windowOpen:plant.windowOpen) } }
     @Published var preset = "sun"
     @Published var locationLabel = ""
     @Published var weatherStatus = ""
@@ -153,23 +155,27 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     func setPreset(_ value: String) {
         settleTime()
         preset = value
-        switch value {
-        case "rain": climate = Climate(temperature: 18, humidity: 88, daylight: true, cloud: 95, rain: true)
-        case "night": climate = Climate(temperature: 8, humidity: 65, daylight: false, cloud: 20)
-        case "rain-night": climate = Climate(temperature:12,humidity:92,daylight:false,cloud:100,rain:true)
-        default: climate = Climate()
-        }
+        let sky:SimulationSky
+        if value.hasPrefix("snow") { sky = .snow }
+        else if value.hasPrefix("storm") { sky = .storm }
+        else if value.hasPrefix("rain") { sky = .rain }
+        else { sky = .clear }
+        climate = sky.climate(daylight:!value.contains("night"))
+    }
+    func setSimulatedWeather(daylight:Bool,sky:SimulationSky) {
+        setPreset(sky == .clear ? (daylight ? "sun" : "night") : sky.rawValue+(daylight ? "" : "-night"))
     }
     func setSimulatedWeather(daylight:Bool,rain:Bool) {
-        setPreset(daylight ? (rain ? "rain" : "sun") : (rain ? "rain-night" : "night"))
+        setSimulatedWeather(daylight:daylight,sky:rain ? .rain : .clear)
     }
     func verifyWeatherCombinations() {
         let fixture = GardenStore()
-        for day in [true,false] { for rain in [true,false] {
-            fixture.setSimulatedWeather(daylight:day,rain:rain)
-            precondition(fixture.climate.daylight == day && fixture.climate.rain == rain,"All four weather combinations must be selectable")
+        for day in [true,false] { for sky in SimulationSky.allCases {
+            fixture.setSimulatedWeather(daylight:day,sky:sky)
+            precondition(fixture.climate.daylight == day && fixture.climate.simulationSky == sky,"All eight simulation combinations must be selectable")
         } }
-        fputs("PASS: clear/rain × day/night weather combinations\n",stderr)
+        fixture.setPreset("sun")
+        fputs("PASS: clear/rain/snow/storm × day/night simulation combinations\n",stderr)
     }
     func startWeatherAtLaunch() {
         guard !startedWeather, !CommandLine.arguments.contains("--render-preview") else { return }
@@ -279,13 +285,12 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         loading = true; lastWeatherAttempt = Date(); let id = UUID(); requestID = id
         Task {
             do {
-                let url = URL(string: "https://api.open-meteo.com/v1/forecast?latitude=\(coordinate.latitude)&longitude=\(coordinate.longitude)&current=temperature_2m,relative_humidity_2m,is_day,cloud_cover,precipitation&timezone=auto")!
+                let url = URL(string: "https://api.open-meteo.com/v1/forecast?latitude=\(coordinate.latitude)&longitude=\(coordinate.longitude)&current=temperature_2m,relative_humidity_2m,is_day,cloud_cover,precipitation,weather_code&timezone=auto")!
                 var request = URLRequest(url: url); request.timeoutInterval = 15
                 let (data, response) = try await URLSession.shared.data(for: request)
                 guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
-                let result = try JSONDecoder().decode(WeatherReply.self, from: data).current
+                let updated = try JSONDecoder().decode(LiveWeatherReply.self, from:data).climate
                 guard id == requestID else { return }
-                let updated = Climate(temperature: result.temperature_2m, humidity: result.relative_humidity_2m, daylight: result.is_day == 1, cloud: result.cloud_cover, rain: result.precipitation > 0)
                 liveClimate = updated; weatherDate = Date(); weatherStatus = "ok"; loading = false; locationTimeout?.cancel()
                 liveLocation = String(format: "%.2f°, %.2f°", coordinate.latitude, coordinate.longitude)
                 if wantsLiveWeather { settleTime(); simulation = false; running = false; climate = updated; locationLabel = liveLocation }
@@ -314,10 +319,4 @@ final class GardenStore: NSObject, ObservableObject, CLLocationManagerDelegate {
         if plant.moisture > 70 { return t("흙이 촉촉해요. 물 대신 잠깐 환기해 주세요.", "The soil is wet. A little airflow will help.") }
         return t("잘 지내고 있어요. 오늘도 천천히 자라는 중.", "Doing well. Growing a little, day by day.")
     }
-}
-private struct WeatherReply: Decodable {
-    struct Current: Decodable {
-        var temperature_2m: Double; var relative_humidity_2m: Double; var is_day: Int; var cloud_cover: Double; var precipitation: Double
-    }
-    var current: Current
 }

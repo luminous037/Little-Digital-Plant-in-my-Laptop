@@ -37,6 +37,8 @@ final class PixelRoomView: NSView {
     }()
     private var timer: Timer?
     private var rain: PixelRainNode?
+    private var snow:PixelSnowNode?
+    private var lightning:LightningNode?
     private var epoch = Date()
     private var lastFrame = Date()
     private var tracking: NSTrackingArea?
@@ -67,6 +69,8 @@ final class PixelRoomView: NSView {
         renderer.scene = scene
         pixelSky = scene.rootNode.childNodes.compactMap { $0 as? PixelSkyNode }.first
         rain = scene.rootNode.childNodes.compactMap { $0 as? PixelRainNode }.first
+        snow = scene.rootNode.childNodes.compactMap { $0 as? PixelSnowNode }.first
+        lightning = scene.rootNode.childNodes.compactMap { $0 as? LightningNode }.first
         musicRig.attach(to:scene)
         watering.attach(to: scene)
         fallingLeaves.attach(to: scene)
@@ -188,6 +192,10 @@ final class PixelRoomView: NSView {
         let now = Date()
         pixelSky?.update(time:now.timeIntervalSinceReferenceDate)
         rain?.update(time:now.timeIntervalSinceReferenceDate)
+        snow?.update(time:now.timeIntervalSinceReferenceDate)
+        if CommandLine.arguments.contains("--render-preview"), ProcessInfo.processInfo.environment["LITTLE_PLANT_SCENARIO"] == "storm-flash" {
+            lightning?.update(elapsed:2.26)
+        } else { lightning?.update(time:now.timeIntervalSinceReferenceDate) }
         let delta = min(0.2, now.timeIntervalSince(lastFrame))
         watering.update(delta)
         fallingLeaves.update(delta)
